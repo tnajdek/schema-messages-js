@@ -27,7 +27,7 @@ module.exports = function(config) {
 	systemjs: {
 		config: {
 			baseURL: '/',
-			transpiler: 'babel',
+			transpiler: null,
 			// babelOptions: {
 			// 	sourceMaps: 'inline'
 			// },
