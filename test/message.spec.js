@@ -40,6 +40,14 @@ describe('Message Factory', function() {
 		factory = new MessageFactory(schema);
 	});
 
+	function getFooMsg(x, y, direction) {
+		let msg = Object.create(factory.get('FooMessage'));
+		msg.x = x || 1;
+		msg.y = y || 3;
+		msg.direction = direction || 'south';
+		return msg;
+	}
+
 	it('It should generate correct class', function() {
 		let FooMessage = factory.get('FooMessage');
 		let BarMessage = factory.get('BarMessage');
@@ -51,4 +59,18 @@ describe('Message Factory', function() {
 		expect(BarMessage.binaryFormat).toBe('!BI{}sH');
 		expect(BarMessage.id).toBe(1);
 	});
+
+	it('It should pack messages', function() {
+		let msg = getFooMsg(2, 4, 'east');
+		let packed = msg.pack();
+		expect(packed instanceof ArrayBuffer).toBe(true);
+		let packedDV = new DataView(packed);
+		expect(packedDV.length).toBe(1 + 1 + 4 + 4);
+		expect(packedDV.getUint8(0)).toBe(2); // msg id
+		expect(packedDV.getUint8(1)).toBe(3); // direction
+		expect(packedDV.getUint32(2)).toBe(2); // x
+		expect(packedDV.getUint32(2)).toBe(4); // y
+	});
+
+
 });
