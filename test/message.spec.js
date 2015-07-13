@@ -58,6 +58,10 @@ describe('Message Factory', function() {
 		expect(FooMessage.schema).toBe(schema);
 		expect(BarMessage.binaryFormat).toBe('!BI{}sH');
 		expect(BarMessage.id).toBe(1);
+
+		// this would be sweet!
+		// let fooMsg = getFooMsg();
+		// expect(fooMsg instanceof FooMessage).toBe(true);
 	});
 
 	it('It should pack messages', function() {
@@ -65,11 +69,11 @@ describe('Message Factory', function() {
 		let packed = msg.pack();
 		expect(packed instanceof ArrayBuffer).toBe(true);
 		let packedDV = new DataView(packed);
-		expect(packedDV.length).toBe(1 + 1 + 4 + 4);
+		expect(packedDV.byteLength).toBe(1 + 1 + 4 + 4);
 		expect(packedDV.getUint8(0)).toBe(2); // msg id
 		expect(packedDV.getUint8(1)).toBe(3); // direction
 		expect(packedDV.getUint32(2)).toBe(2); // x
-		expect(packedDV.getUint32(2)).toBe(4); // y
+		expect(packedDV.getUint32(6)).toBe(4); // y
 	});
 
 

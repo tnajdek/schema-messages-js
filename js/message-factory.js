@@ -43,6 +43,20 @@ export default class {
 		this.idBinaryFormat = getBinaryFormatSymbol(keys.length);
 
 		keys.forEach(function(className, index) {
+			var enums = {}, reverseEnums = {};
+
+			if(schema[className].enums) {
+				for(let enumName in schema[className].enums) {
+					let enumValues = schema[className].enums[enumName];
+					enums[enumName] = {};
+					reverseEnums[enumName] = {};
+					for(let enumKey in enumValues) {
+						let enumValue = enumValues[enumKey];
+						enums[enumName][enumKey] = enumValue;
+						reverseEnums[enumName][enumValue] = enumKey;
+					}
+				}
+			}
 			let MessageClass = Object.create(MessageBase.prototype, {
 				'name': {
 					value: className,
@@ -65,7 +79,11 @@ export default class {
 					writable: false
 				},
 				'enums': {
-					value: {},
+					value: enums,
+					writable: false
+				},
+				'reverseEnums': {
+					value: reverseEnums,
 					writable: false
 				}
 			});

@@ -44,6 +44,8 @@ module.exports = function(config) {
 			'node_modules/es6-module-loader/dist/es6-module-loader.js.map',
 			'node_modules/systemjs/dist/system-polyfills.js.map',
 			'node_modules/systemjs/dist/system.js.map',
+			'bower_components/jspack-arraybuffer/struct.js',
+			'bower_components/utf8/utf8.js',
 			'js/*.js',
 			'test/*.spec.js'
 		]
