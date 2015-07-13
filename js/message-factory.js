@@ -85,6 +85,10 @@ export default class {
 				'reverseEnums': {
 					value: reverseEnums,
 					writable: false
+				},
+				'data': {
+					value: {},
+					writable: true
 				}
 			});
 
