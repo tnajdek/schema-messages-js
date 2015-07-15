@@ -121,4 +121,19 @@ describe('Message Factory', function() {
 		expect(Math.round(unpackedMsg.data.y * 100) / 100).toBe(7.77);
 	});
 
+	it('It should unpack messages with a string', function() {
+		let packed = new ArrayBuffer(13);
+		let packedDV = new DataView(packed);
+		let encodedString = utf8.encode('Mr ☃');
+		packedDV.setUint8(0, 1);
+		packedDV.setUint32(1, 6);
+		for (let i = 0, len = encodedString.length; i < len; i++) {
+			packedDV.setUint8(5 + i, encodedString.charCodeAt(i));
+		}
+		packedDV.setUint16(11, 42);
+		let unpackedMsg = factory.unpackMessage(packed);
+		expect(unpackedMsg.data.name).toBe('Mr ☃');
+		expect(unpackedMsg.data.score).toBe(42);
+	});
+
 });
