@@ -56,6 +56,11 @@ describe('Message Factory', function() {
 		return msg;
 	}
 
+	function getVectorMsg(name, x, y) {
+		let msg = Object.create(factory.get('VectorMessage'));
+		msg.data.x = x || 1;
+		msg.data.y = y || 7.77;
+	}
 
 	it('It should generate correct class', function() {
 		let FooMessage = factory.get('FooMessage');
@@ -101,6 +106,19 @@ describe('Message Factory', function() {
 
 		expect(utf8.decode(extractedString)).toBe('Mr ☃'); // there is the string back!
 		expect(packedDV.getUint16(11)).toBe(42); // score
+	});
+
+	it('It should unpack messages', function() {
+		let packed = new ArrayBuffer(9);
+		let packedDV = new DataView(packed);
+		packedDV.setUint8(0, 3);
+		packedDV.setFloat32(1, 1);
+		packedDV.setFloat32(5, 7.77);
+
+		let unpackedMsg = factory.unpackMessage(packed);
+		expect(unpackedMsg.data.x).toBe(1);
+		/* Yo Jasmine, no almost equal? meh */
+		expect(Math.round(unpackedMsg.data.y * 100) / 100).toBe(7.77);
 	});
 
 });

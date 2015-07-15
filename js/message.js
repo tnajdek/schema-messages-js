@@ -1,11 +1,7 @@
 import struct from 'bower_components/jspack-arraybuffer/struct.js';
 import utf8 from 'bower_components/utf8/utf8.js';
+import stringFormat from 'js/string-format.js';
 
-
-function stringFormat(str, replacements) {
-	var counter = 0;
-	return str.replace(/\{\}/g, function() { return replacements[counter]; });
-}
 
 export default class {
 	pack() {

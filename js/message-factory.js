@@ -1,4 +1,7 @@
+import struct from 'bower_components/jspack-arraybuffer/struct.js';
 import MessageBase from 'js/message.js';
+import stringFormat from 'js/string-format.js';
+import utf8 from 'bower_components/utf8/utf8.js';
 
 const MAX_SUPPORTED_NUMBER = Number.MAX_SAFE_INTEGER > Math.pow(2, 64) - 1 ? Number.MAX_SAFE_INTEGER : Math.pow(2, 64) - 1; //eslint-disable-line
 
@@ -138,5 +141,48 @@ export default class {
 		} else {
 			return this.getByName(idOrName);
 		}
+	}
+
+	unpackMessage(data) {
+		let bufferDV = new DataView(data);
+		let msgId = bufferDV['getUint' + (this.bytesNeededForId * 8)](0);
+		let cls = this.getById(msgId);
+		let item = Object.create(cls);
+		let keys = Object.keys(cls.format).sort();
+		let stringLengths = [];
+		let indexestoRemove = [];
+
+		for(let i = 0; i < keys.length; i++) {
+			let key = keys[i];
+			let type = cls.format[key];
+			if(type === 'string') {
+				let offset = this.bytesNeededForId + i;
+				let stringLength = bufferDV.getUint32(offset);
+				stringLengths.push(stringLength);
+				indexestoRemove.push(i);
+			}
+		}
+
+		let binaryFormat = stringFormat(cls.binaryFormat, stringLengths);
+		let msgData = struct.unpack(binaryFormat, data);
+		msgData.shift(); //remove the id
+
+		for(let i = 0; i < indexestoRemove.length; i++) {
+			msgData.splice(indexestoRemove[i], 1);
+		}
+
+		for(let i = 0; i < keys.length; i++) {
+			let key = keys[i];
+			let type = cls.format[key];
+			item.data[key] = msgData[i];
+			if(type === 'string') {
+				item.data[key] = utf8.decode(item.data[key]);
+			}
+			if(type === 'enum') {
+				item.data[key] = cls.enums[key][item.data[key]];
+			}
+		}
+
+		return item;
 	}
 }
