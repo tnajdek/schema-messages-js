@@ -182,4 +182,41 @@ describe('Message Factory', function() {
 		expect(Math.round(unpackedMsgs[2].data.y * 100) / 100).toBe(7.77);
 	});
 
+	it('It should pack many messages', function() {
+		let messages = [];
+		let ourPacked = new ArrayBuffer(30);
+		let packedDV = new DataView(ourPacked);
+
+		let msg1 = getFooMsg();
+		packedDV.setUint8(0, Object.getPrototypeOf(msg1).id);
+		packedDV.setUint8(1, Object.getPrototypeOf(msg1).enums.direction.south);
+		packedDV.setUint32(2, 1);
+		packedDV.setUint32(6, 3);
+
+		let msg2 = getBarMsg();
+		packedDV.setUint8(10, Object.getPrototypeOf(msg2).id);
+		packedDV.setUint32(11, 4);
+		for (let i = 0; i < 4; i++) {
+			packedDV.setUint8(15 + i, 'Yoda'.charCodeAt(i));
+		}
+		packedDV.setUint16(19, 42);
+
+		let msg3 = getBarMsg();
+		packedDV.setUint8(21, Object.getPrototypeOf(msg3).id);
+		packedDV.setFloat32(22, 1);
+		packedDV.setFloat32(26, 7.77);
+
+		messages = [msg1, msg2, msg3];
+		let theirPacked = factory.packMessages(messages);
+
+		expect(ourPacked).toEqual(theirPacked);
+
+		let ourPackedU8 = new Uint8Array(ourPacked);
+		let theirPackedU8 = new Uint8Array(theirPacked);
+
+		for(let i of ourPackedU8) {
+			expect(ourPackedU8[i]).toBe(theirPackedU8[i]);
+		}
+
+	});
 });

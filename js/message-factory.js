@@ -198,4 +198,26 @@ export default class {
 		return messages;
 	}
 
+	packMessages(messages) {
+		let arrayBuffers = [];
+		let msgLength = messages.length;
+		let totalLength = 0;
+		let offset = 0;
+
+		for(let i = 0; i < msgLength; i++) {
+			let packed = messages[i].pack();
+			arrayBuffers.push(packed);
+			totalLength += packed.byteLength;
+		}
+
+		let packed = new Uint8Array(totalLength);
+
+		for(let i = 0; i < msgLength; i++) {
+			packed.set(new Uint8Array(arrayBuffers[i]), offset);
+			offset += arrayBuffers[i].byteLength;
+		}
+
+		return packed.buffer;
+	}
+
 }
