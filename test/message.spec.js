@@ -60,6 +60,7 @@ describe('Message Factory', function() {
 		let msg = Object.create(factory.get('VectorMessage'));
 		msg.data.x = x || 1;
 		msg.data.y = y || 7.77;
+		return msg;
 	}
 
 	it('It should generate correct class', function() {
@@ -134,6 +135,51 @@ describe('Message Factory', function() {
 		let unpackedMsg = factory.unpackMessage(packed);
 		expect(unpackedMsg.data.name).toBe('Mr ☃');
 		expect(unpackedMsg.data.score).toBe(42);
+	});
+
+	it('It should eat own dog food', function() {
+		let msg = getFooMsg(null, 1.0);
+		let packedMsg = msg.pack();
+		let unpacked = factory.unpackMessage(packedMsg);
+
+		expect(msg.data.x).toBe(unpacked.data.x);
+		expect(msg.data.y).toBe(unpacked.data.y);
+		expect(msg.data.direction).toBe(unpacked.data.direction);
+	});
+
+	it('It should unpack many messages', function() {
+		let msg = getFooMsg();
+		let packed = new ArrayBuffer(30);
+		let packedDV = new DataView(packed);
+		packedDV.setUint8(0, Object.getPrototypeOf(msg).id);
+		packedDV.setUint8(1, Object.getPrototypeOf(msg).enums.direction.south);
+		packedDV.setUint32(2, 1);
+		packedDV.setUint32(6, 3);
+
+		msg = getBarMsg();
+		packedDV.setUint8(10, Object.getPrototypeOf(msg).id);
+		packedDV.setUint32(11, 4);
+		for (let i = 0; i < 4; i++) {
+			packedDV.setUint8(15 + i, 'Yoda'.charCodeAt(i));
+		}
+		packedDV.setUint16(19, 42);
+
+		msg = getVectorMsg();
+		packedDV.setUint8(21, Object.getPrototypeOf(msg).id);
+		packedDV.setFloat32(22, 1);
+		packedDV.setFloat32(26, 7.77);
+
+		let unpackedMsgs = factory.unpackMessages(packed);
+		expect(Object.getPrototypeOf(unpackedMsgs[0]).name, 'FooMessage');
+		expect(Object.getPrototypeOf(unpackedMsgs[1]).name, 'BarMessage');
+		expect(Object.getPrototypeOf(unpackedMsgs[2]).name, 'VectorMessage');
+		expect(unpackedMsgs[0].data.direction).toBe('south');
+		expect(unpackedMsgs[0].data.x).toBe(1);
+		expect(unpackedMsgs[0].data.y).toBe(3);
+		expect(unpackedMsgs[1].data.name).toBe('Yoda');
+		expect(unpackedMsgs[1].data.score).toBe(42);
+		expect(unpackedMsgs[2].data.x).toBe(1);
+		expect(Math.round(unpackedMsgs[2].data.y * 100) / 100).toBe(7.77);
 	});
 
 });

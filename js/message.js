@@ -28,4 +28,23 @@ export default class {
 		binaryFormat = stringFormat(binaryFormat, stringLengths);
 		return struct.pack(binaryFormat, data);
 	}
+
+	getBinaryLength() {
+		let cls = Object.getPrototypeOf(this);
+		let format = cls.format;
+		let keys = Object.keys(format).sort();
+		let binaryFormat = cls.binaryFormat;
+		let stringLengths = [];
+
+		for(let i = 0; i < keys.length; i++) {
+			let key = keys[i];
+
+			if(format[key] === 'string') {
+				stringLengths.push(this.data[key].length);
+			}
+		}
+
+		binaryFormat = stringFormat(binaryFormat, stringLengths);
+		return struct.calcLength(binaryFormat);
+	}
 }

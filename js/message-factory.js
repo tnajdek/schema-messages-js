@@ -179,10 +179,23 @@ export default class {
 				item.data[key] = utf8.decode(item.data[key]);
 			}
 			if(type === 'enum') {
-				item.data[key] = cls.enums[key][item.data[key]];
+				item.data[key] = cls.reverseEnums[key][item.data[key]];
 			}
 		}
 
 		return item;
 	}
+
+	unpackMessages(data) {
+		let messages = [];
+
+		while(data.byteLength) {
+			let msg = this.unpackMessage(data);
+			data = data.slice(msg.getBinaryLength());
+			messages.push(msg);
+		}
+
+		return messages;
+	}
+
 }
