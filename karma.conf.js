@@ -1,11 +1,12 @@
 /*eslint-env node */
 module.exports = function(config) {
 	config.set({
-
 	basePath: '',
 	plugins: [
 		'karma-systemjs',
 		'karma-jasmine',
+		'karma-coverage',
+		'karma-coveralls',
 		'karma-chrome-launcher',
 		'karma-firefox-launcher',
 		'karma-source-map-support',
@@ -17,7 +18,7 @@ module.exports = function(config) {
 		'source-map-support'
 	],
 	preprocessors: {
-		'js/*.js': ['babel'],
+		'js/*.js': ['babel', 'coverage'],
 		'test/*.js': ['babel']
 	},
 	babelPreprocessor: {
@@ -62,7 +63,11 @@ module.exports = function(config) {
 		// Specify the suffix used for test suite file names.	Defaults to .test.js, .spec.js, _test.js, and _spec.js
 		// testFileSuffix: '.spec.js'
 	},
-	reporters: ['dots'],
+	reporters: ['coverage', 'coveralls'],
+	coverageReporter: {
+		type: 'lcov',
+		dir: 'coverage/'
+	},
 	port: 9876,
 	colors: true,
 	logLevel: config.LOG_INFO,
