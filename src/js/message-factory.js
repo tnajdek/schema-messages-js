@@ -1,7 +1,7 @@
-import struct from 'bower_components/jspack-arraybuffer/struct.js';
-import MessageBase from 'js/message.js';
-import stringFormat from 'js/string-format.js';
-import utf8 from 'bower_components/utf8/utf8.js';
+import struct from '../bower_components/jspack-arraybuffer/struct.js';
+import MessageBase from './message.js';
+import stringFormat from './string-format.js';
+import utf8 from '../bower_components/utf8/utf8.js';
 
 const MAX_SUPPORTED_NUMBER = Number.MAX_SAFE_INTEGER > Math.pow(2, 64) - 1 ? Number.MAX_SAFE_INTEGER : Math.pow(2, 64) - 1; //eslint-disable-line
 
@@ -37,7 +37,7 @@ let getBinaryFormatSymbol = function(number) {
 	}
 };
 
-export default class {
+class MessageFactory {
 	constructor(schema) {
 		let keys = Object.keys(schema).sort();
 		this.msgClassesByName = {};
@@ -219,5 +219,6 @@ export default class {
 
 		return packed.buffer;
 	}
-
 }
+
+export default MessageFactory;

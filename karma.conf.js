@@ -20,7 +20,7 @@ module.exports = function(config) {
 		'source-map-support'
 	],
 	preprocessors: {
-		'js/*.js': ['babel', 'coverage'],
+		'src/js/*.js': ['babel', 'coverage'],
 		'test/*.js': ['babel']
 	},
 	babelPreprocessor: {
@@ -48,22 +48,11 @@ module.exports = function(config) {
 			'node_modules/es6-module-loader/dist/es6-module-loader.js.map',
 			'node_modules/systemjs/dist/system-polyfills.js.map',
 			'node_modules/systemjs/dist/system.js.map',
-			'bower_components/jspack-arraybuffer/struct.js',
-			'bower_components/utf8/utf8.js',
-			'js/*.js',
+			'src/bower_components/jspack-arraybuffer/struct.js',
+			'src/bower_components/utf8/utf8.js',
+			'src/js/*.js',
 			'test/*.spec.js'
 		]
-
-		// SystemJS configuration specifically for tests, added after your config file.
-		// Good for adding test libraries and mock modules
-		// config: {
-		// 	paths: {
-		// 		'angular-mocks': 'bower_components/angular-mocks/angular-mocks.js'
-		// 	}
-		// },
-
-		// Specify the suffix used for test suite file names.	Defaults to .test.js, .spec.js, _test.js, and _spec.js
-		// testFileSuffix: '.spec.js'
 	},
 	reporters: reporters,
 	coverageReporter: {

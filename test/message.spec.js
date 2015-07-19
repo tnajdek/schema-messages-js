@@ -1,8 +1,8 @@
 /* eslint-env node, jasmine */
 'use strict';
 
-import utf8 from 'bower_components/utf8/utf8.js';
-import MessageFactory from 'js/message-factory.js';
+import utf8 from '../src/bower_components/utf8/utf8.js';
+import MessageFactory from '../src/js/message-factory.js';
 
 var schema = {
 	'FooMessage': {

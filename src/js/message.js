@@ -1,9 +1,9 @@
-import struct from 'bower_components/jspack-arraybuffer/struct.js';
-import utf8 from 'bower_components/utf8/utf8.js';
-import stringFormat from 'js/string-format.js';
+import struct from '../bower_components/jspack-arraybuffer/struct.js';
+import utf8 from '../bower_components/utf8/utf8.js';
+import stringFormat from './string-format.js';
 
 
-export default class {
+class MessageBase {
 	pack() {
 		let cls = Object.getPrototypeOf(this);
 		let format = cls.format;
@@ -48,3 +48,5 @@ export default class {
 		return struct.calcLength(binaryFormat);
 	}
 }
+
+export default MessageBase;
