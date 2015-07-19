@@ -7,6 +7,7 @@ module.exports = function(config) {
 		'karma-systemjs',
 		'karma-jasmine',
 		'karma-chrome-launcher',
+		'karma-firefox-launcher',
 		'karma-source-map-support',
 		'karma-babel-preprocessor'
 	],
