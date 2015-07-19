@@ -5,11 +5,11 @@
   "description": "",
   "repository": "https://github.com/tnajdek/schema-sockets-js",
   "scripts": {
-    "postinstall": "node_modules/bower/bin/bower install",
+    "postinstall": "./node_modules/.bin/bower install",
     "prestart": "npm install",
     "pretest": "npm install",
-    "test": "node_modules/karma/bin/karma start karma.conf.js",
-    "test-single-run": "node_modules/karma/bin/karma start karma.conf.js  --single-run"
+    "test": "node_modules/.bin/karma start karma.conf.js",
+    "test-single-run": "node_modules/.bin/karma start karma.conf.js  --single-run"
   },
   "devDependencies": {
     "bower": "^1.4.1",

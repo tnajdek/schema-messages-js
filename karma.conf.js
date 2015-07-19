@@ -62,7 +62,7 @@ module.exports = function(config) {
 		// Specify the suffix used for test suite file names.	Defaults to .test.js, .spec.js, _test.js, and _spec.js
 		// testFileSuffix: '.spec.js'
 	},
-	reporters: ['progress'],
+	reporters: ['dots'],
 	port: 9876,
 	colors: true,
 	logLevel: config.LOG_INFO,
