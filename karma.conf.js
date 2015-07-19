@@ -1,5 +1,7 @@
 /*eslint-env node */
 module.exports = function(config) {
+	var reporters = process.env.COVERALLS_REPO_TOKEN ? ['dots', 'coverage', 'coveralls'] : ['dots', 'coverage'];
+
 	config.set({
 	basePath: '',
 	plugins: [
@@ -63,7 +65,7 @@ module.exports = function(config) {
 		// Specify the suffix used for test suite file names.	Defaults to .test.js, .spec.js, _test.js, and _spec.js
 		// testFileSuffix: '.spec.js'
 	},
-	reporters: ['coverage', 'coveralls'],
+	reporters: reporters,
 	coverageReporter: {
 		type: 'lcov',
 		dir: 'coverage/'
