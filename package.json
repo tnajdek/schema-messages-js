@@ -1,11 +1,10 @@
 {
   "name": "schema-messages",
   "license": "MIT",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Library to create network-efficient binary representations of structured data.",
   "repository": "https://github.com/tnajdek/schema-sockets-js",
   "scripts": {
-    "postinstall": "./node_modules/.bin/bower install",
     "prestart": "npm install",
     "pretest": "npm install",
     "build": "./node_modules/gulp/bin/gulp.js",
