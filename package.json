@@ -1,5 +1,5 @@
 {
-  "name": "schema-sockets-js",
+  "name": "schema-messages",
   "license": "MIT",
   "version": "0.1.0",
   "description": "Library to create network-efficient binary representations of structured data.",
