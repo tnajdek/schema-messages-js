@@ -42,7 +42,8 @@ describe('Message Factory', function() {
 	});
 
 	function getFooMsg(x, y, direction) {
-		let msg = Object.create(factory.get('FooMessage'));
+		let cls = factory.get('FooMessage');
+		let msg = new cls();
 		msg.data.x = x || 1;
 		msg.data.y = y || 3;
 		msg.data.direction = direction || 'south';
@@ -50,14 +51,14 @@ describe('Message Factory', function() {
 	}
 
 	function getBarMsg(name, score) {
-		let msg = Object.create(factory.get('BarMessage'));
+		let msg = new (factory.get('BarMessage'))();
 		msg.data.name = name || 'Yoda';
 		msg.data.score = score || 42;
 		return msg;
 	}
 
 	function getVectorMsg(name, x, y) {
-		let msg = Object.create(factory.get('VectorMessage'));
+		let msg = new (factory.get('VectorMessage'))();
 		msg.data.x = x || 1;
 		msg.data.y = y || 7.77;
 		return msg;
@@ -74,9 +75,8 @@ describe('Message Factory', function() {
 		expect(BarMessage.binaryFormat).toBe('!BI{}sH');
 		expect(BarMessage.id).toBe(1);
 
-		// this would be sweet!
-		// let fooMsg = getFooMsg();
-		// expect(fooMsg instanceof FooMessage).toBe(true);
+		let fooMsg = getFooMsg();
+		expect(fooMsg instanceof FooMessage).toBe(true);
 	});
 
 	it('It should pack messages', function() {
@@ -217,6 +217,35 @@ describe('Message Factory', function() {
 		for(let i of ourPackedU8) {
 			expect(ourPackedU8[i]).toBe(theirPackedU8[i]);
 		}
+	});
 
+	it('It should pack many messages of the same kind', function() {
+		let messages = [];
+		let ourPacked = new ArrayBuffer(20);
+		let packedDV = new DataView(ourPacked);
+
+		let msg1 = getFooMsg();
+		packedDV.setUint8(0, Object.getPrototypeOf(msg1).id);
+		packedDV.setUint8(1, Object.getPrototypeOf(msg1).enums.direction.south);
+		packedDV.setUint32(2, 1);
+		packedDV.setUint32(6, 3);
+
+		let msg2 = getFooMsg();
+		packedDV.setUint8(10, Object.getPrototypeOf(msg2).id);
+		packedDV.setUint8(11, Object.getPrototypeOf(msg2).enums.direction.north);
+		packedDV.setUint32(12, 2);
+		packedDV.setUint32(16, 22);
+
+		messages = [msg1, msg2];
+		let theirPacked = factory.packMessages(messages);
+
+		expect(ourPacked).toEqual(theirPacked);
+
+		let ourPackedU8 = new Uint8Array(ourPacked);
+		let theirPackedU8 = new Uint8Array(theirPacked);
+
+		for(let i of ourPackedU8) {
+			expect(ourPackedU8[i]).toBe(theirPackedU8[i]);
+		}
 	});
 });

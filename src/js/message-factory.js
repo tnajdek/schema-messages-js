@@ -60,7 +60,12 @@ class MessageFactory {
 					}
 				}
 			}
-			let MessageClass = Object.create(MessageBase.prototype, {
+
+			let MessageClass = function() {
+				MessageBase.call(this);
+			};
+
+			let properties = {
 				'name': {
 					value: className,
 					writable: false
@@ -88,12 +93,12 @@ class MessageFactory {
 				'reverseEnums': {
 					value: reverseEnums,
 					writable: false
-				},
-				'data': {
-					value: {},
-					writable: true
 				}
-			});
+			};
+
+			// @TODO revisit if setting properties like this can be avoided
+			MessageClass.prototype = Object.create(MessageBase.prototype, properties);
+			Object.defineProperties(MessageClass, properties);
 
 			this.msgClassesById[index + 1] = MessageClass;
 			this.msgClassesByName[className] = MessageClass;
@@ -147,7 +152,7 @@ class MessageFactory {
 		let bufferDV = new DataView(data);
 		let msgId = bufferDV['getUint' + (this.bytesNeededForId * 8)](0);
 		let cls = this.getById(msgId);
-		let item = Object.create(cls);
+		let item = new cls();
 		let keys = Object.keys(cls.format).sort();
 		let stringLengths = [];
 		let indexestoRemove = [];
@@ -170,6 +175,8 @@ class MessageFactory {
 		for(let i = 0; i < indexestoRemove.length; i++) {
 			msgData.splice(indexestoRemove[i], 1);
 		}
+
+		// item.data = {};
 
 		for(let i = 0; i < keys.length; i++) {
 			let key = keys[i];
