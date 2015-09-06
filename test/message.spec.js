@@ -1,4 +1,5 @@
-/* eslint-env node, jasmine */
+/* eslint-env node, karma,jasmine */
+/* global dump */
 'use strict';
 
 import utf8 from '../src/bower_components/utf8/utf8.js';

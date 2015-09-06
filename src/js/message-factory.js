@@ -1,7 +1,8 @@
-import struct from '../bower_components/jspack-arraybuffer/struct.js';
+// import struct from '../bower_components/jspack-arraybuffer/struct.js';
 import MessageBase from './message.js';
-import stringFormat from './string-format.js';
-import utf8 from '../bower_components/utf8/utf8.js';
+// import stringFormat from './string-format.js';
+// import utf8 from '../bower_components/utf8/utf8.js';
+import * as unpackers from './unpackers.js';
 
 const MAX_SUPPORTED_NUMBER = Number.MAX_SAFE_INTEGER > Math.pow(2, 64) - 1 ? Number.MAX_SAFE_INTEGER : Math.pow(2, 64) - 1; //eslint-disable-line
 
@@ -17,12 +18,22 @@ let binaryTypes = {
 	'int64': 'q',
 	'uint64': 'Q',
 	'float': 'f',
-	'double': 'd'
-};
+	'double': 'd',
+	'string': 's'
+}, typeLookup = {};
 
+Object.keys(binaryTypes).forEach(function(typeName) {
+	typeLookup[typeName] = unpackers['unpack' + typeName.charAt(0).toUpperCase() + typeName.slice(1)];
+});
+
+typeLookup.enum = unpackers.unpackEnum;
+
+let getBytesToRepresent = function(number) {
+	return Math.ceil(Math.log(number, 2) / 8);
+}
 
 let getBinaryFormatSymbol = function(number) {
-	let bytesNeeded = Math.ceil(Math.log(number, 2) / 8);
+	let bytesNeeded = getBytesToRepresent(number);
 
 	if(bytesNeeded <= 1) {
 		return 'B';
@@ -37,6 +48,22 @@ let getBinaryFormatSymbol = function(number) {
 	}
 };
 
+let getUnpacker = function(number) {
+	let bytesNeeded = getBytesToRepresent(number);
+
+	if(bytesNeeded <= 1) {
+		return unpackers.unpackUbyte;
+	} else if(bytesNeeded === 2) {
+		return unpackers.unpackUshort;
+	} else if(bytesNeeded <= 4) {
+		return unpackers.unpackUint;
+	} else if(bytesNeeded <= 8) {
+		return unpackers.unpackUint64;
+	} else {
+		throw `No suitable unpacked could be found that could unpack $number`;
+	}
+};
+
 class MessageFactory {
 	constructor(schema) {
 		let keys = Object.keys(schema).sort();
@@ -44,9 +71,14 @@ class MessageFactory {
 		this.msgClassesById = {};
 		this.bytesNeededForId = Math.ceil(Math.log(keys.length + 1, 2) / 8);
 		this.idBinaryFormat = getBinaryFormatSymbol(keys.length);
+		this.idUnpacker = getUnpacker(keys.length);
 
 		keys.forEach(function(className, index) {
-			var enums = {}, reverseEnums = {};
+			var enums = {},
+				reverseEnums = {},
+				msgkeys = Object.keys(schema[className].format).sort(),
+				msgunpackers = [];
+
 
 			if(schema[className].enums) {
 				for(let enumName in schema[className].enums) {
@@ -64,6 +96,15 @@ class MessageFactory {
 			let MessageClass = function() {
 				MessageBase.call(this);
 			};
+
+			msgkeys.forEach(function(msgkey) {
+				var unpacker = typeLookup[schema[className].format[msgkey]];
+				if(schema[className].format[msgkey] === 'enum') {
+					msgunpackers.push(unpacker.bind(MessageClass, reverseEnums[msgkey], getUnpacker(Object.keys(enums).length)));
+				} else {
+					msgunpackers.push(unpacker.bind(MessageClass));
+				}
+			});
 
 			let properties = {
 				'name': {
@@ -92,6 +133,18 @@ class MessageFactory {
 				},
 				'reverseEnums': {
 					value: reverseEnums,
+					writable: false
+				},
+				'length': {
+					value: msgkeys.length,
+					writable: false
+				},
+				'keys': {
+					value: msgkeys,
+					writable: false
+				},
+				'unpackers': {
+					value: msgunpackers,
 					writable: false
 				}
 			};
@@ -148,58 +201,42 @@ class MessageFactory {
 		}
 	}
 
+	unpackMessageInDV(dv, pointer, items) {
+		let data = [],
+			ids = [],
+			Cls, item;
+
+		pointer = this.idUnpacker(dv, pointer, ids);
+		Cls = this.getById(ids.pop());
+		item = new Cls();
+
+		for(let i = 0; i < Cls.length; i++) {
+			pointer = Cls.unpackers[i](dv, pointer, data);
+			item.data[Cls.keys[i]] = data[i];
+		}
+
+		items.push(item);
+
+		return pointer;
+	}
+
+	// convienience method
 	unpackMessage(data) {
-		let bufferDV = new DataView(data);
-		let msgId = bufferDV['getUint' + (this.bytesNeededForId * 8)](0);
-		let cls = this.getById(msgId);
-		let item = new cls();
-		let keys = Object.keys(cls.format).sort();
-		let stringLengths = [];
-		let indexestoRemove = [];
+		let messages = [],
+			dv = new DataView(data);
 
-		for(let i = 0; i < keys.length; i++) {
-			let key = keys[i];
-			let type = cls.format[key];
-			if(type === 'string') {
-				let offset = this.bytesNeededForId + i;
-				let stringLength = bufferDV.getUint32(offset);
-				stringLengths.push(stringLength);
-				indexestoRemove.push(i);
-			}
-		}
+		this.unpackMessageInDV(dv, 0, messages);
 
-		let binaryFormat = stringFormat(cls.binaryFormat, stringLengths);
-		let msgData = struct.unpack(binaryFormat, data);
-		msgData.shift(); //remove the id
-
-		for(let i = 0; i < indexestoRemove.length; i++) {
-			msgData.splice(indexestoRemove[i], 1);
-		}
-
-		// item.data = {};
-
-		for(let i = 0; i < keys.length; i++) {
-			let key = keys[i];
-			let type = cls.format[key];
-			item.data[key] = msgData[i];
-			if(type === 'string') {
-				item.data[key] = utf8.decode(item.data[key]);
-			}
-			if(type === 'enum') {
-				item.data[key] = cls.reverseEnums[key][item.data[key]];
-			}
-		}
-
-		return item;
+		return messages.pop();
 	}
 
 	unpackMessages(data) {
-		let messages = [];
+		let messages = [],
+			dv = new DataView(data),
+			pointer = 0;
 
-		while(data.byteLength) {
-			let msg = this.unpackMessage(data);
-			data = data.slice(msg.getBinaryLength());
-			messages.push(msg);
+		while(pointer < data.byteLength) {
+			pointer = this.unpackMessageInDV(dv, pointer, messages);
 		}
 
 		return messages;

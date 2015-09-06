@@ -11,7 +11,7 @@ MessageBase.prototype.pack = function() {
 	let cls = Object.getPrototypeOf(this);
 	let format = cls.format;
 	let binaryFormat = cls.binaryFormat;
-	let keys = Object.keys(format).sort();
+	let keys = cls.keys;
 	let stringLengths = [];
 	let data = [ cls.id ];
 
