@@ -4,12 +4,12 @@ export function unpackMessageInDV(dv, pointer, items, factory) {
 	Cls, item;
 
 	pointer = factory.idUnpacker(dv, pointer, ids);
-	Cls = this.getById(ids.pop());
+	Cls = factory.getById(ids.pop());
 	item = new Cls();
 
 	for(let i = 0; i < Cls.length; i++) {
 		pointer = Cls.unpackers[i](dv, pointer, data);
-		item.data[Cls.keys[i]] = data[i];
+		item.raw[Cls.keys[i]] = data[i];
 	}
 
 	items.push(item);
@@ -44,7 +44,7 @@ export function packMessageInDV(dv, pointer, msg, factory, TypeCls) {
 	pointer = factory.idPacker(dv, pointer, Cls.id);
 
 	for(let i = 0; i < Cls.length; i++) {
-		pointer = Cls.packers[i](dv, pointer, msg[Cls.keys[i]]);
+		pointer = Cls.packers[i](dv, pointer, msg.raw[Cls.keys[i]]);
 	}
 
 	return pointer;

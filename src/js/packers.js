@@ -65,6 +65,6 @@ export function packString(dv, pointer, value) {
 	return pointer;
 }
 
-export function packEnum(enums, packer, dv, pointer, value) {
-	return packer(dv, pointer, enums[value]);
+export function packEnum(packer, dv, pointer, value) {
+	return packer(dv, pointer, value);
 }

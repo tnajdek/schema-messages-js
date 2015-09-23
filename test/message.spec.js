@@ -1,9 +1,14 @@
 /* eslint-env node, karma,jasmine */
-/* global dump */
 'use strict';
 
 import utf8 from '../src/bower_components/utf8/utf8.js';
 import MessageFactory from '../src/js/message-factory.js';
+import {
+	unpackMessage,
+	unpackMessages,
+	packMessage,
+	packMessages
+} from '../src/js/interface.js';
 
 var schema = {
 	'FooMessage': {
@@ -43,25 +48,25 @@ describe('Message Factory', function() {
 	});
 
 	function getFooMsg(x, y, direction) {
-		let cls = factory.get('FooMessage');
-		let msg = new cls();
-		msg.data.x = x || 1;
-		msg.data.y = y || 3;
-		msg.data.direction = direction || 'south';
+		let Cls = factory.get('FooMessage');
+		let msg = new Cls();
+		msg.x = x || 1;
+		msg.y = y || 3;
+		msg.direction = direction || 'south';
 		return msg;
 	}
 
 	function getBarMsg(name, score) {
 		let msg = new (factory.get('BarMessage'))();
-		msg.data.name = name || 'Yoda';
-		msg.data.score = score || 42;
+		msg.name = name || 'Yoda';
+		msg.score = score || 42;
 		return msg;
 	}
 
 	function getVectorMsg(name, x, y) {
 		let msg = new (factory.get('VectorMessage'))();
-		msg.data.x = x || 1;
-		msg.data.y = y || 7.77;
+		msg.x = x || 1;
+		msg.y = y || 7.77;
 		return msg;
 	}
 
@@ -70,10 +75,7 @@ describe('Message Factory', function() {
 		let BarMessage = factory.get('BarMessage');
 		expect(FooMessage.name).toBe('FooMessage');
 		expect(BarMessage.name).toBe('BarMessage');
-		expect(FooMessage.binaryFormat).toBe('!BBII');
 		expect(FooMessage.id).toBe(2);
-		expect(FooMessage.schema).toBe(schema);
-		expect(BarMessage.binaryFormat).toBe('!BI{}sH');
 		expect(BarMessage.id).toBe(1);
 
 		let fooMsg = getFooMsg();
@@ -82,7 +84,7 @@ describe('Message Factory', function() {
 
 	it('It should pack messages', function() {
 		let msg = getFooMsg(2, 4, 'east');
-		let packed = msg.pack();
+		let packed = packMessage(msg, factory);
 		expect(packed instanceof ArrayBuffer).toBe(true);
 		let packedDV = new DataView(packed);
 		expect(packedDV.byteLength).toBe(1 + 1 + 4 + 4);
@@ -94,8 +96,7 @@ describe('Message Factory', function() {
 
 	it('It should pack messages with a string', function() {
 		let msg = getBarMsg('Mr ☃');
-		let packed = msg.pack();
-		packed = msg.pack();
+		let packed = packMessage(msg, factory);
 		let packedDV = new DataView(packed);
 		expect(packedDV.byteLength).toBe(1 + 2 + 4 + 6);
 		expect(packedDV.getUint8(0)).toBe(1); // msg id
@@ -117,10 +118,10 @@ describe('Message Factory', function() {
 		packedDV.setFloat32(1, 1);
 		packedDV.setFloat32(5, 7.77);
 
-		let unpackedMsg = factory.unpackMessage(packed);
-		expect(unpackedMsg.data.x).toBe(1);
+		let unpackedMsg = unpackMessage(packed, factory);
+		expect(unpackedMsg.x).toBe(1);
 		/* Yo Jasmine, no almost equal? meh */
-		expect(Math.round(unpackedMsg.data.y * 100) / 100).toBe(7.77);
+		expect(Math.round(unpackedMsg.y * 100) / 100).toBe(7.77);
 	});
 
 	it('It should unpack messages with a string', function() {
@@ -129,23 +130,25 @@ describe('Message Factory', function() {
 		let encodedString = utf8.encode('Mr ☃');
 		packedDV.setUint8(0, 1);
 		packedDV.setUint32(1, 6);
+
 		for (let i = 0, len = encodedString.length; i < len; i++) {
 			packedDV.setUint8(5 + i, encodedString.charCodeAt(i));
 		}
+
 		packedDV.setUint16(11, 42);
-		let unpackedMsg = factory.unpackMessage(packed);
-		expect(unpackedMsg.data.name).toBe('Mr ☃');
-		expect(unpackedMsg.data.score).toBe(42);
+		let unpackedMsg = unpackMessage(packed, factory);
+		expect(unpackedMsg.name).toBe('Mr ☃');
+		expect(unpackedMsg.score).toBe(42);
 	});
 
 	it('It should eat own dog food', function() {
 		let msg = getFooMsg(null, 1.0);
-		let packedMsg = msg.pack();
-		let unpacked = factory.unpackMessage(packedMsg);
+		let packedMsg = packMessage(msg, factory);
+		let unpacked = unpackMessage(packedMsg, factory);
 
-		expect(msg.data.x).toBe(unpacked.data.x);
-		expect(msg.data.y).toBe(unpacked.data.y);
-		expect(msg.data.direction).toBe(unpacked.data.direction);
+		expect(msg.x).toBe(unpacked.x);
+		expect(msg.y).toBe(unpacked.y);
+		expect(msg.direction).toBe(unpacked.direction);
 	});
 
 	it('It should unpack many messages', function() {
@@ -170,17 +173,17 @@ describe('Message Factory', function() {
 		packedDV.setFloat32(22, 1);
 		packedDV.setFloat32(26, 7.77);
 
-		let unpackedMsgs = factory.unpackMessages(packed);
+		let unpackedMsgs = unpackMessages(packed, factory);
 		expect(Object.getPrototypeOf(unpackedMsgs[0]).name, 'FooMessage');
 		expect(Object.getPrototypeOf(unpackedMsgs[1]).name, 'BarMessage');
 		expect(Object.getPrototypeOf(unpackedMsgs[2]).name, 'VectorMessage');
-		expect(unpackedMsgs[0].data.direction).toBe('south');
-		expect(unpackedMsgs[0].data.x).toBe(1);
-		expect(unpackedMsgs[0].data.y).toBe(3);
-		expect(unpackedMsgs[1].data.name).toBe('Yoda');
-		expect(unpackedMsgs[1].data.score).toBe(42);
-		expect(unpackedMsgs[2].data.x).toBe(1);
-		expect(Math.round(unpackedMsgs[2].data.y * 100) / 100).toBe(7.77);
+		expect(unpackedMsgs[0].direction).toBe('south');
+		expect(unpackedMsgs[0].x).toBe(1);
+		expect(unpackedMsgs[0].y).toBe(3);
+		expect(unpackedMsgs[1].name).toBe('Yoda');
+		expect(unpackedMsgs[1].score).toBe(42);
+		expect(unpackedMsgs[2].x).toBe(1);
+		expect(Math.round(unpackedMsgs[2].y * 100) / 100).toBe(7.77);
 	});
 
 	it('It should pack many messages', function() {
@@ -208,7 +211,7 @@ describe('Message Factory', function() {
 		packedDV.setFloat32(26, 7.77);
 
 		messages = [msg1, msg2, msg3];
-		let theirPacked = factory.packMessages(messages);
+		let theirPacked = packMessages(messages, factory);
 
 		expect(ourPacked).toEqual(theirPacked);
 
@@ -238,7 +241,7 @@ describe('Message Factory', function() {
 		packedDV.setUint32(16, 22);
 
 		messages = [msg1, msg2];
-		let theirPacked = factory.packMessages(messages);
+		let theirPacked = packMessages(messages, factory);
 
 		expect(ourPacked).toEqual(theirPacked);
 

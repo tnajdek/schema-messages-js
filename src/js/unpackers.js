@@ -68,9 +68,7 @@ export function unpackString(dv, pointer, extracted) {
 	return pointer + stringLength;
 }
 
-export function unpackEnum(reverseEnums, unpacker, dv, pointer, extracted) {
-	var rawExtracted = [];
-	pointer = unpacker(dv, pointer, rawExtracted);
-	extracted.push(reverseEnums[rawExtracted.pop()]);
+export function unpackEnum(unpacker, dv, pointer, extracted) {
+	pointer = unpacker(dv, pointer, extracted);
 	return pointer;
 }

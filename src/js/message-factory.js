@@ -101,8 +101,8 @@ class MessageFactory {
 				packer = packerLookup[schema[className].format[msgkey]];
 
 				if(schema[className].format[msgkey] === 'enum') {
-					msgunpackers.push(unpacker.bind(MessageClass, reverseEnums[msgkey], getUnpacker(Object.keys(enums).length)));
-					msgpackers.push(packer.bind(MessageClass, enums[msgkey], getPacker(Object.keys(enums).length)));
+					msgunpackers.push(getUnpacker(Object.keys(enums).length));
+					msgpackers.push(getPacker(Object.keys(enums).length));
 					baseBinaryLength += getBytesToRepresent(Object.keys(enums).length);
 					msgProperties[msgkey] = {
 						get: function() {
@@ -124,7 +124,7 @@ class MessageFactory {
 								return utf8.decode(this.raw[msgkey]);
 							},
 							set: function(newValue) {
-								this.binaryLength -= this.raw[msgkey].length;
+								this.binaryLength -= this.raw[msgkey] && this.raw[msgkey].length || 0;
 								this.raw[msgkey] = utf8.encode(newValue);
 								this.binaryLength += this.raw[msgkey].length;
 							}
