@@ -1,5 +1,3 @@
-import utf8 from '../bower_components/utf8/utf8.js';
-
 export function unpackBool(dv, pointer, extracted) {
 	extracted.push(dv.getUInt8(pointer) === 1);
 	return pointer + 1;
@@ -66,7 +64,7 @@ export function unpackString(dv, pointer, extracted) {
 		values.push(dv.getUint8(pointer + i));
 	}
 
-	extracted.push(utf8.decode(String.fromCharCode.apply(null, values)));
+	extracted.push(String.fromCharCode.apply(null, values));
 	return pointer + stringLength;
 }
 
