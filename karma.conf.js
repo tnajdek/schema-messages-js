@@ -5,55 +5,39 @@ module.exports = function(config) {
 	config.set({
 	basePath: '',
 	plugins: [
-		'karma-systemjs',
 		'karma-jasmine',
 		'karma-coverage',
 		'karma-coveralls',
 		'karma-chrome-launcher',
 		'karma-firefox-launcher',
 		'karma-source-map-support',
-		'karma-babel-preprocessor'
+		'karma-babel-preprocessor',
+		'karma-browserify'
 	],
 	frameworks: [
-		'systemjs',
 		'jasmine',
+		'browserify',
 		'source-map-support'
 	],
 	preprocessors: {
-		'src/js/*.js': ['babel', 'coverage'],
-		'test/*.js': ['babel']
+		'src/js/*.js': ['browserify', 'coverage'],
+		'test/*.js': ['browserify']
+	},
+	browserify: {
+		debug: true,
+		transform: ['babelify']
 	},
 	babelPreprocessor: {
 		options: {
 			sourceMap: 'inline'
 		}
 	},
-	systemjs: {
-		config: {
-			baseURL: '/',
-			transpiler: null,
-			// babelOptions: {
-			// 	sourceMaps: 'inline'
-			// },
-			paths: {
-				'es6-module-loader': 'node_modules/es6-module-loader/dist/es6-module-loader.js',
-				'systemjs': 'node_modules/systemjs/dist/system.js',
-				'system-polyfills': 'node_modules/systemjs/dist/system-polyfills.js',
-				'babel': 'node_modules/babel-core/browser.js'
-			}
-		},
+	files: [
+		'src/bower_components/utf8/utf8.js',
+		'src/js/*.js',
+		'test/*.js'
+	],
 
-		// File patterns for your application code, dependencies, and test suites
-		files: [
-			'node_modules/es6-module-loader/dist/es6-module-loader.js.map',
-			'node_modules/systemjs/dist/system-polyfills.js.map',
-			'node_modules/systemjs/dist/system.js.map',
-			'src/bower_components/jspack-arraybuffer/struct.js',
-			'src/bower_components/utf8/utf8.js',
-			'src/js/*.js',
-			'test/*.spec.js'
-		]
-	},
 	reporters: reporters,
 	coverageReporter: {
 		type: 'lcov',
