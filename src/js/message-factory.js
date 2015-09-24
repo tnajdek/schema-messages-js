@@ -79,7 +79,7 @@ class MessageFactory {
 				MessageBase.call(this);
 			};
 
-			msgkeys.forEach(function(msgkey, msgkeyindex) {
+			msgkeys.forEach(function(msgkey) {
 				switch(schema[className].format[msgkey]) {
 					case 'enum':
 						msgunpackers.push(getUnpacker(Object.keys(enums).length));

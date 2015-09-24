@@ -5,7 +5,6 @@
   "homepage": "https://github.com/angular/schema-sockets-js",
   "private": true,
   "dependencies": {
-    "jspack-arraybuffer": "theangryangel/jspack-arraybuffer",
     "utf8": "~2.0.0"
   }
 }
