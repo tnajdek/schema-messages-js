@@ -1,7 +1,9 @@
-// import struct from '../bower_components/jspack-arraybuffer/struct.js';
 import MessageBase from './message.js';
-// import stringFormat from './string-format.js';
-import utf8 from '../bower_components/utf8/utf8.js';
+import {
+	getEnumAccessors,
+	getStringAccessors,
+	getRawAccessor
+} from './accessors.js';
 import * as unpackers from './unpackers.js';
 import * as packers from './packers.js';
 
@@ -15,22 +17,7 @@ import {
 
 const MAX_SUPPORTED_NUMBER = Number.MAX_SAFE_INTEGER > Math.pow(2, 64) - 1 ? Number.MAX_SAFE_INTEGER : Math.pow(2, 64) - 1; //eslint-disable-line
 
-let binaryTypes = {
-		'bool': '?',
-		'byte': 'b',
-		'ubyte': 'B',
-		'char': 'c',
-		'short': 'h',
-		'ushort': 'H',
-		'int': 'i',
-		'uint': 'I',
-		'int64': 'q',
-		'uint64': 'Q',
-		'float': 'f',
-		'double': 'd',
-		'string': 's'
-	},
-	sizeLookup = {
+let sizeLookup = {
 		'bool': 1,
 		'byte': 1,
 		'ubyte': 1,
@@ -48,8 +35,7 @@ let binaryTypes = {
 	unpackerLookup = {},
 	packerLookup = {};
 
-// @TODO: we don't need binaryTypes any more, simplify
-Object.keys(binaryTypes).forEach(function(typeName) {
+Object.keys(sizeLookup).forEach(function(typeName) {
 	unpackerLookup[typeName] = unpackers['unpack' + typeName.charAt(0).toUpperCase() + typeName.slice(1)];
 	packerLookup[typeName] = packers['pack' + typeName.charAt(0).toUpperCase() + typeName.slice(1)];
 });
@@ -74,10 +60,7 @@ class MessageFactory {
 				baseBinaryLength = this.bytesNeededForId,
 				msgunpackers = [],
 				msgpackers = [],
-				dynamicFieldsIndexes = [],
 				msgProperties = {};
-
-
 
 			if(schema[className].enums) {
 				for(let enumName in schema[className].enums) {
@@ -97,48 +80,27 @@ class MessageFactory {
 			};
 
 			msgkeys.forEach(function(msgkey, msgkeyindex) {
-				let unpacker = unpackerLookup[schema[className].format[msgkey]],
-				packer = packerLookup[schema[className].format[msgkey]];
+				switch(schema[className].format[msgkey]) {
+					case 'enum':
+						msgunpackers.push(getUnpacker(Object.keys(enums).length));
+						msgpackers.push(getPacker(Object.keys(enums).length));
+						baseBinaryLength += getBytesToRepresent(Object.keys(enums).length);
+						msgProperties[msgkey] = getEnumAccessors(msgkey);
+					break;
 
-				if(schema[className].format[msgkey] === 'enum') {
-					msgunpackers.push(getUnpacker(Object.keys(enums).length));
-					msgpackers.push(getPacker(Object.keys(enums).length));
-					baseBinaryLength += getBytesToRepresent(Object.keys(enums).length);
-					msgProperties[msgkey] = {
-						get: function() {
-							return this.Cls.reverseEnums[msgkey][this.raw[msgkey]];
-						},
-						set: function(newValue) {
-							this.raw[msgkey] = this.Cls.enums[msgkey][newValue];
-						}
-					};
-				} else {
-					msgunpackers.push(unpacker.bind(MessageClass));
-					msgpackers.push(packer.bind(MessageClass));
-					baseBinaryLength += sizeLookup[schema[className].format[msgkey]];
+					case 'string':
+						msgProperties[msgkey] = getStringAccessors(msgkey);
+						msgunpackers.push(unpackerLookup[schema[className].format[msgkey]]);
+						msgpackers.push(packerLookup[schema[className].format[msgkey]]);
+						baseBinaryLength += sizeLookup[schema[className].format[msgkey]];
+					break;
 
-					if(schema[className].format[msgkey] === 'string') {
-						dynamicFieldsIndexes.push(msgkeyindex);
-						msgProperties[msgkey] = {
-							get: function() {
-								return utf8.decode(this.raw[msgkey]);
-							},
-							set: function(newValue) {
-								this.binaryLength -= this.raw[msgkey] && this.raw[msgkey].length || 0;
-								this.raw[msgkey] = utf8.encode(newValue);
-								this.binaryLength += this.raw[msgkey].length;
-							}
-						};
-					} else {
-						msgProperties[msgkey] = {
-							get: function() {
-								return this.raw[msgkey];
-							},
-							set: function(newValue) {
-								this.raw[msgkey] = newValue;
-							}
-						};
-					}
+					default:
+						msgProperties[msgkey] = getRawAccessor(msgkey);
+						msgunpackers.push(unpackerLookup[schema[className].format[msgkey]]);
+						msgpackers.push(packerLookup[schema[className].format[msgkey]]);
+						baseBinaryLength += sizeLookup[schema[className].format[msgkey]];
+					break;
 				}
 			});
 
@@ -147,18 +109,10 @@ class MessageFactory {
 					value: className,
 					writable: false
 				},
-				// 'binaryFormat': {
-				// 	value: this.getBinaryFormat(schema[className]),
-				// 	writable: false
-				// },
 				'format': {
 					value: schema[className].format,
 					writable: false
 				},
-				// 'schema': {
-				// 	value: schema,
-				// 	writable: false
-				// },
 				'id': {
 					value: index + 1,
 					writable: false
@@ -205,33 +159,6 @@ class MessageFactory {
 			this.msgClassesByName[className] = MessageClass;
 		}.bind(this));
 }
-
-// getBinaryFormat(msgSchema) {
-// 	let fields = Object.keys(msgSchema.format).sort();
-// 		let binaryFormat = '!';  // we always use network (big-endian) byte order
-// 		binaryFormat += this.idBinaryFormat;
-
-// 		fields.forEach(function(field) {
-// 			if(msgSchema.format[field] === 'string') {
-// 				binaryFormat += 'I{}s';
-// 			}
-// 			else if(msgSchema.format[field] === 'enum') {
-// 				try {
-// 					binaryFormat += getBinaryFormatSymbol(Object.keys(msgSchema.format[field]).length);
-// 				} catch(e) {
-// 					throw `Enum field can contain the maximum number MAX_SUPPORTED_NUMBER possible values.`;
-// 				}
-// 			} else {
-// 				try {
-// 					binaryFormat += binaryTypes[msgSchema.format[field]];
-// 				} catch(e) {
-// 					throw `Unknown field type msgSchema.format[field].`;
-// 				}
-// 			}
-// 		});
-
-// 		return binaryFormat;
-// 	}
 
 	getByName(name) {
 		return this.msgClassesByName[name];
