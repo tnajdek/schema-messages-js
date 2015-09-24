@@ -1,5 +1,3 @@
-import utf8 from '../bower_components/utf8/utf8.js';
-
 export function unpackBool(dv, pointer, extracted) {
 	extracted.push(dv.getUInt8(pointer) === 1);
 	return pointer + 1;
@@ -66,13 +64,11 @@ export function unpackString(dv, pointer, extracted) {
 		values.push(dv.getUint8(pointer + i));
 	}
 
-	extracted.push(utf8.decode(String.fromCharCode.apply(null, values)));
+	extracted.push(String.fromCharCode.apply(null, values));
 	return pointer + stringLength;
 }
 
-export function unpackEnum(reverseEnums, unpacker, dv, pointer, extracted) {
-	var rawExtracted = [];
-	pointer = unpacker(dv, pointer, rawExtracted);
-	extracted.push(reverseEnums[rawExtracted.pop()]);
+export function unpackEnum(unpacker, dv, pointer, extracted) {
+	pointer = unpacker(dv, pointer, extracted);
 	return pointer;
 }

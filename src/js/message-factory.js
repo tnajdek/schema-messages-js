@@ -1,84 +1,66 @@
-// import struct from '../bower_components/jspack-arraybuffer/struct.js';
 import MessageBase from './message.js';
-// import stringFormat from './string-format.js';
-// import utf8 from '../bower_components/utf8/utf8.js';
+import {
+	getEnumAccessors,
+	getStringAccessors,
+	getRawAccessor
+} from './accessors.js';
 import * as unpackers from './unpackers.js';
+import * as packers from './packers.js';
+
+import {
+	getBytesToRepresent,
+	getBinaryFormatSymbol,
+	getUnpacker,
+	getPacker
+} from './utils.js';
+
 
 const MAX_SUPPORTED_NUMBER = Number.MAX_SAFE_INTEGER > Math.pow(2, 64) - 1 ? Number.MAX_SAFE_INTEGER : Math.pow(2, 64) - 1; //eslint-disable-line
 
-let binaryTypes = {
-	'bool': '?',
-	'byte': 'b',
-	'ubyte': 'B',
-	'char': 'c',
-	'short': 'h',
-	'ushort': 'H',
-	'int': 'i',
-	'uint': 'I',
-	'int64': 'q',
-	'uint64': 'Q',
-	'float': 'f',
-	'double': 'd',
-	'string': 's'
-}, typeLookup = {};
+let sizeLookup = {
+		'bool': 1,
+		'byte': 1,
+		'ubyte': 1,
+		'char': 1,
+		'short': 2,
+		'ushort': 2,
+		'int': 4,
+		'uint': 4,
+		'int64': 8,
+		'uint64': 8,
+		'float': 4,
+		'double': 8,
+		'string': 4
+	},
+	unpackerLookup = {},
+	packerLookup = {};
 
-Object.keys(binaryTypes).forEach(function(typeName) {
-	typeLookup[typeName] = unpackers['unpack' + typeName.charAt(0).toUpperCase() + typeName.slice(1)];
+Object.keys(sizeLookup).forEach(function(typeName) {
+	unpackerLookup[typeName] = unpackers['unpack' + typeName.charAt(0).toUpperCase() + typeName.slice(1)];
+	packerLookup[typeName] = packers['pack' + typeName.charAt(0).toUpperCase() + typeName.slice(1)];
 });
 
-typeLookup.enum = unpackers.unpackEnum;
-
-let getBytesToRepresent = function(number) {
-	return Math.ceil(Math.log(number, 2) / 8);
-}
-
-let getBinaryFormatSymbol = function(number) {
-	let bytesNeeded = getBytesToRepresent(number);
-
-	if(bytesNeeded <= 1) {
-		return 'B';
-	} else if(bytesNeeded === 2) {
-		return 'H';
-	} else if(bytesNeeded <= 4) {
-		return 'I';
-	} else if(bytesNeeded <= 8) {
-		return 'Q';
-	} else {
-		throw `Unable to represent number $number in packed structure`;
-	}
-};
-
-let getUnpacker = function(number) {
-	let bytesNeeded = getBytesToRepresent(number);
-
-	if(bytesNeeded <= 1) {
-		return unpackers.unpackUbyte;
-	} else if(bytesNeeded === 2) {
-		return unpackers.unpackUshort;
-	} else if(bytesNeeded <= 4) {
-		return unpackers.unpackUint;
-	} else if(bytesNeeded <= 8) {
-		return unpackers.unpackUint64;
-	} else {
-		throw `No suitable unpacked could be found that could unpack $number`;
-	}
-};
+unpackerLookup.enum = unpackers.unpackEnum;
+packerLookup.enum = packers.packEnum;
 
 class MessageFactory {
 	constructor(schema) {
 		let keys = Object.keys(schema).sort();
 		this.msgClassesByName = {};
 		this.msgClassesById = {};
-		this.bytesNeededForId = Math.ceil(Math.log(keys.length + 1, 2) / 8);
+		this.bytesNeededForId = getBytesToRepresent(keys.length);
 		this.idBinaryFormat = getBinaryFormatSymbol(keys.length);
 		this.idUnpacker = getUnpacker(keys.length);
+		this.idPacker = getPacker(keys.length);
 
 		keys.forEach(function(className, index) {
 			var enums = {},
 				reverseEnums = {},
 				msgkeys = Object.keys(schema[className].format).sort(),
-				msgunpackers = [];
-
+				baseBinaryLength = this.bytesNeededForId,
+				msgunpackers = [],
+				msgpackers = [],
+				msgProperties = {};
 
 			if(schema[className].enums) {
 				for(let enumName in schema[className].enums) {
@@ -98,11 +80,27 @@ class MessageFactory {
 			};
 
 			msgkeys.forEach(function(msgkey) {
-				var unpacker = typeLookup[schema[className].format[msgkey]];
-				if(schema[className].format[msgkey] === 'enum') {
-					msgunpackers.push(unpacker.bind(MessageClass, reverseEnums[msgkey], getUnpacker(Object.keys(enums).length)));
-				} else {
-					msgunpackers.push(unpacker.bind(MessageClass));
+				switch(schema[className].format[msgkey]) {
+					case 'enum':
+						msgunpackers.push(getUnpacker(Object.keys(enums).length));
+						msgpackers.push(getPacker(Object.keys(enums).length));
+						baseBinaryLength += getBytesToRepresent(Object.keys(enums).length);
+						msgProperties[msgkey] = getEnumAccessors(msgkey);
+					break;
+
+					case 'string':
+						msgProperties[msgkey] = getStringAccessors(msgkey);
+						msgunpackers.push(unpackerLookup[schema[className].format[msgkey]]);
+						msgpackers.push(packerLookup[schema[className].format[msgkey]]);
+						baseBinaryLength += sizeLookup[schema[className].format[msgkey]];
+					break;
+
+					default:
+						msgProperties[msgkey] = getRawAccessor(msgkey);
+						msgunpackers.push(unpackerLookup[schema[className].format[msgkey]]);
+						msgpackers.push(packerLookup[schema[className].format[msgkey]]);
+						baseBinaryLength += sizeLookup[schema[className].format[msgkey]];
+					break;
 				}
 			});
 
@@ -111,16 +109,8 @@ class MessageFactory {
 					value: className,
 					writable: false
 				},
-				'binaryFormat': {
-					value: this.getBinaryFormat(schema[className]),
-					writable: false
-				},
 				'format': {
 					value: schema[className].format,
-					writable: false
-				},
-				'schema': {
-					value: schema,
 					writable: false
 				},
 				'id': {
@@ -146,6 +136,18 @@ class MessageFactory {
 				'unpackers': {
 					value: msgunpackers,
 					writable: false
+				},
+				'packers': {
+					value: msgpackers,
+					writable: false
+				},
+				'baseBinaryLength': {
+					value: baseBinaryLength,
+					writable: false
+				},
+				'msgProperties': {
+					value: msgProperties,
+					writable: false
 				}
 			};
 
@@ -156,34 +158,7 @@ class MessageFactory {
 			this.msgClassesById[index + 1] = MessageClass;
 			this.msgClassesByName[className] = MessageClass;
 		}.bind(this));
-	}
-
-	getBinaryFormat(msgSchema) {
-		let fields = Object.keys(msgSchema.format).sort();
-		let binaryFormat = '!';  // we always use network (big-endian) byte order
-		binaryFormat += this.idBinaryFormat;
-
-		fields.forEach(function(field) {
-			if(msgSchema.format[field] === 'string') {
-				binaryFormat += 'I{}s';
-			}
-			else if(msgSchema.format[field] === 'enum') {
-				try {
-					binaryFormat += getBinaryFormatSymbol(Object.keys(msgSchema.format[field]).length);
-				} catch(e) {
-					throw `Enum field can contain the maximum number MAX_SUPPORTED_NUMBER possible values.`;
-				}
-			} else {
-				try {
-					binaryFormat += binaryTypes[msgSchema.format[field]];
-				} catch(e) {
-					throw `Unknown field type msgSchema.format[field].`;
-				}
-			}
-		});
-
-		return binaryFormat;
-	}
+}
 
 	getByName(name) {
 		return this.msgClassesByName[name];
@@ -199,69 +174,6 @@ class MessageFactory {
 		} else {
 			return this.getByName(idOrName);
 		}
-	}
-
-	unpackMessageInDV(dv, pointer, items) {
-		let data = [],
-			ids = [],
-			Cls, item;
-
-		pointer = this.idUnpacker(dv, pointer, ids);
-		Cls = this.getById(ids.pop());
-		item = new Cls();
-
-		for(let i = 0; i < Cls.length; i++) {
-			pointer = Cls.unpackers[i](dv, pointer, data);
-			item.data[Cls.keys[i]] = data[i];
-		}
-
-		items.push(item);
-
-		return pointer;
-	}
-
-	// convienience method
-	unpackMessage(data) {
-		let messages = [],
-			dv = new DataView(data);
-
-		this.unpackMessageInDV(dv, 0, messages);
-
-		return messages.pop();
-	}
-
-	unpackMessages(data) {
-		let messages = [],
-			dv = new DataView(data),
-			pointer = 0;
-
-		while(pointer < data.byteLength) {
-			pointer = this.unpackMessageInDV(dv, pointer, messages);
-		}
-
-		return messages;
-	}
-
-	packMessages(messages) {
-		let arrayBuffers = [];
-		let msgLength = messages.length;
-		let totalLength = 0;
-		let offset = 0;
-
-		for(let i = 0; i < msgLength; i++) {
-			let packed = messages[i].pack();
-			arrayBuffers.push(packed);
-			totalLength += packed.byteLength;
-		}
-
-		let packed = new Uint8Array(totalLength);
-
-		for(let i = 0; i < msgLength; i++) {
-			packed.set(new Uint8Array(arrayBuffers[i]), offset);
-			offset += arrayBuffers[i].byteLength;
-		}
-
-		return packed.buffer;
 	}
 }
 
