@@ -1,9 +1,7 @@
 {
-  "name": "schema-sockets-js",
-  "description": "",
-  "version": "0.0.1",
+  "name": "schema-sockets",
+  "description": "Library to create network-efficient binary representations of structured data.",
   "homepage": "https://github.com/angular/schema-sockets-js",
-  "private": true,
   "dependencies": {
     "utf8": "~2.0.0"
   }

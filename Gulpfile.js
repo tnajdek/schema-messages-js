@@ -15,7 +15,7 @@ gulp.task('default', function () {
 	var b = browserify({
 		entries: 'src/main.js',
 		debug: true,
-		standalone: 'MessageFactory',
+		standalone: 'schemaMessages',
 		transform: [babelify]
 	});
 

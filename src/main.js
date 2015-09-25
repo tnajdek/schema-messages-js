@@ -6,10 +6,12 @@ import {
 	packMessages
 } from '../src/js/interface.js';
 
-module.exports = {
+var schemaMessages = {
 	'MessageFactory': MessageFactory,
 	'unpackMessage': unpackMessage,
 	'unpackMessages': unpackMessages,
 	'packMessage': packMessage,
 	'packMessages': packMessages
 };
+
+module.exports = schemaMessages;
