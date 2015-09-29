@@ -1,5 +1,11 @@
 import utf8 from '../bower_components/utf8/utf8.js';
 
+/**
+ * Generates accessor for an enum property
+ * Used internally
+ * @param  {string} msgkey
+ * @return {Object} accessor
+ */
 export function getEnumAccessors(msgkey) {
 	return {
 		get: function() {
@@ -11,6 +17,12 @@ export function getEnumAccessors(msgkey) {
 	};
 }
 
+/**
+ * Generates accessor for a string property
+ * Used internally
+ * @param  {string} msgkey
+ * @return {Object} accessor
+ */
 export function getStringAccessors(msgkey) {
 	return {
 		get: function() {
@@ -24,6 +36,12 @@ export function getStringAccessors(msgkey) {
 	};
 }
 
+/**
+ * Generates accesor for properties that can be stored without processing
+ * Used internally
+ * @param  {string} msgkey
+ * @return {Object} accessor
+ */
 export function getRawAccessor(msgkey) {
 	return {
 		get: function() {

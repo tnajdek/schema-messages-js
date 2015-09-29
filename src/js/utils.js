@@ -1,26 +1,22 @@
 import * as unpackers from './unpackers.js';
 import * as packers from './packers.js';
 
+/**
+ * Returns number of bytes required to store integer number
+ * @param  {number} number - integer number to be represented
+ * @return {number} - number of bytes required to represent a number
+ */
 export function getBytesToRepresent(number) {
 	return Math.ceil(Math.log(number + 1, 2) / 8);
 }
 
-export function getBinaryFormatSymbol(number) {
-	let bytesNeeded = getBytesToRepresent(number);
-
-	if(bytesNeeded <= 1) {
-		return 'B';
-	} else if(bytesNeeded === 2) {
-		return 'H';
-	} else if(bytesNeeded <= 4) {
-		return 'I';
-	} else if(bytesNeeded <= 8) {
-		return 'Q';
-	} else {
-		throw `Unable to represent number $number in packed structure`;
-	}
-}
-
+/**
+ * Returns unpacker suitable for unpacking given integer number
+ * Used internally when parsing schema for selecting how many
+ * bytes should be allocated  for ids and enums
+ * @param  {number} number - a number to be unpacked
+ * @return {Function} - unpacker
+ */
 export function getUnpacker(number) {
 	let bytesNeeded = getBytesToRepresent(number);
 
@@ -37,6 +33,13 @@ export function getUnpacker(number) {
 	}
 }
 
+/**
+ * Returns packer suitable for packing given integer number
+ * Used internally when parsing schema for selecting how many
+ * bytes should be allocated for ids and enums
+ * @param  {number} number - a number to be packed
+ * @return {Function} - packer
+ */
 export function getPacker(number) {
 	let bytesNeeded = getBytesToRepresent(number);
 

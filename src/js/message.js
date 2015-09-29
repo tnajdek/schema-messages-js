@@ -1,3 +1,7 @@
+/**
+ * Base for every Class Message
+ * @constructor
+ */
 function MessageBase() {
 	this.Cls = Object.getPrototypeOf(this);
 	this.binaryLength = this.Cls.baseBinaryLength;

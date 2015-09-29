@@ -9,7 +9,6 @@ import * as packers from './packers.js';
 
 import {
 	getBytesToRepresent,
-	getBinaryFormatSymbol,
 	getUnpacker,
 	getPacker
 } from './utils.js';
@@ -43,13 +42,17 @@ Object.keys(sizeLookup).forEach(function(typeName) {
 unpackerLookup.enum = unpackers.unpackEnum;
 packerLookup.enum = packers.packEnum;
 
+/**
+ * Parses Schema and creates Message classes
+ * @constructor
+ * @param {Object} schena
+ */
 class MessageFactory {
 	constructor(schema) {
 		let keys = Object.keys(schema).sort();
 		this.msgClassesByName = {};
 		this.msgClassesById = {};
 		this.bytesNeededForId = getBytesToRepresent(keys.length);
-		this.idBinaryFormat = getBinaryFormatSymbol(keys.length);
 		this.idUnpacker = getUnpacker(keys.length);
 		this.idPacker = getPacker(keys.length);
 
@@ -159,14 +162,30 @@ class MessageFactory {
 		}.bind(this));
 }
 
+	/**
+	 * Obtain Message Class by name
+	 * @param  {string} name - The name of the class to obtain
+	 * @return {Object} -  Message Class
+	 */
 	getByName(name) {
 		return this.msgClassesByName[name];
 	}
 
+	/**
+	 * Obtain Message Class by id
+	 * @param  {number} id - the id of the class to obtaim
+	 * @return {Object} - Message Class
+	 */
 	getById(id) {
 		return this.msgClassesById[id];
 	}
 
+	/**
+	 * Obtain Message Class either by name or id.
+	 * Convienient but slightly slower than getByName or getById
+	 * @param  {string|number} idOrName - the id or name of the class to obtain
+	 * @return {Object} - Message Class
+	 */
 	get(idOrName) {
 		if(!isNaN(parseInt(idOrName)) && isFinite(idOrName)) {
 			return this.getById(idOrName);
