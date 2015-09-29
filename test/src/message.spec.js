@@ -1,6 +1,7 @@
 /* eslint-env node, karma,jasmine */
 'use strict';
 
+// #ifdef KARMA
 import utf8 from '../src/bower_components/utf8/utf8.js';
 import MessageFactory from '../src/js/message-factory.js';
 import {
@@ -9,6 +10,15 @@ import {
 	packMessage,
 	packMessages
 } from '../src/js/interface.js';
+// #else
+var utf8 = require('../src/bower_components/utf8/utf8.js');
+var sm = require('../dist/schema-messages.js');
+var MessageFactory = sm.MessageFactory;
+var unpackMessage = sm.unpackMessage;
+var unpackMessages = sm.unpackMessages;
+var packMessage = sm.packMessage;
+var packMessages = sm.packMessages;
+// #endif
 
 var schema = {
 	'FooMessage': {

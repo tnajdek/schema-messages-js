@@ -4,12 +4,13 @@
   "version": "0.1.8",
   "description": "Library to create network-efficient binary representations of structured data.",
   "repository": "https://github.com/tnajdek/schema-sockets-js",
+  "main": "dist/schema-messages.js",
   "scripts": {
     "prestart": "npm install",
     "pretest": "npm install",
-    "build": "./node_modules/gulp/bin/gulp.js",
-    "test": "./node_modules/.bin/karma start karma.conf.js",
-    "test-single-run": "./node_modules/.bin/karma start karma.conf.js  --single-run"
+    "build": "./node_modules/.bin/gulp",
+    "test": "./node_modules/.bin/preprocess ./test/src/message.spec.js -KARMA=true > ./test/message.spec.js && ./node_modules/.bin/karma start karma.conf.js",
+    "test-node": "./node_modules/.bin/gulp && ./node_modules/.bin/preprocess ./test/src/message.spec.js > ./test/message.spec.js && ./node_modules/.bin/jasmine-node test/message.spec.js"
   },
   "devDependencies": {
     "babelify": "^6.3.0",
@@ -20,6 +21,7 @@
     "gulp-uglify": "^1.4.1",
     "gulp-util": "^3.0.6",
     "jasmine-core": "^2.3.4",
+    "jasmine-node": "^1.14.5",
     "karma": "^0.13.10",
     "karma-babel-preprocessor": "^5.2.2",
     "karma-browserify": "^4.3.0",
@@ -29,6 +31,7 @@
     "karma-firefox-launcher": "^0.1.6",
     "karma-jasmine": "^0.3.6",
     "karma-source-map-support": "^1.1.0",
+    "preprocessor": "^1.4.0",
     "rimraf": "^2.4.3",
     "source-map-support": "^0.3.2",
     "vinyl-buffer": "^1.0.0",

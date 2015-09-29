@@ -75,10 +75,6 @@ class MessageFactory {
 				}
 			}
 
-			let MessageClass = function() {
-				MessageBase.call(this);
-			};
-
 			msgkeys.forEach(function(msgkey) {
 				switch(schema[className].format[msgkey]) {
 					case 'enum':
@@ -151,8 +147,11 @@ class MessageFactory {
 				}
 			};
 
-			// @TODO revisit if setting properties like this can be avoided
-			MessageClass.prototype = Object.create(MessageBase.prototype, properties);
+			let MessageClass = function() {
+				MessageBase.call(this);
+			};
+
+			MessageClass.prototype = Object.create({}, properties);
 			Object.defineProperties(MessageClass, properties);
 
 			this.msgClassesById[index + 1] = MessageClass;
